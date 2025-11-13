@@ -1,0 +1,37 @@
+# Nombre del flujo de trabajo que identifica la tarea en GitHub Actions
+name: Despliegue en Host
+
+# Especifica el evento que dispara el flujo de trabajo
+on:
+  push:
+    branches:
+      - main  # Este flujo se ejecuta cuando hay un push en la rama "main"
+
+# Define los trabajos que se ejecutarán como parte del flujo de trabajo
+jobs:
+  build:
+    name: Build  # Nombre del trabajo
+    runs-on: ubuntu-latest  # Utiliza un entorno Ubuntu como host para ejecutar el trabajo
+
+    # Lista de pasos que se ejecutarán secuencialmente
+    steps:
+      # Paso 1: Hacer pull del código en el VPS
+      - name: Hacer pull codigo en VPS
+        uses: appleboy/ssh-action@master  # Acción que permite ejecutar comandos SSH en un servidor remoto
+        with:
+          host: ${{ secrets.SSH_HOST }}  # Dirección del servidor, almacenada como secreto en GitHub
+          username: ${{ secrets.SSH_USER }}  # Nombre de usuario SSH, almacenado como secreto en GitHub
+          key: ${{ secrets.SSH_KEY }}  # Clave privada SSH, almacenada como secreto en GitHub
+          script: |  # Comandos que se ejecutarán en el servidor remoto
+            # Navegar al directorio de trabajo en el servidor
+            cd /usr/local/lsws/Example/
+            chmod 755 html  # Ajustar permisos del directorio "html"
+            cd html/
+            chmod 777 testpano  # Ajustar permisos del directorio del proyecto.
+            cd testpano/
+            chmod 666 db.sqlite3  # Ajustar permisos del archivo de base de datos
+            chmod -R 777 staticfiles/
+            chmod -R 777 media/
+            pip install -r requirements.txt  # Instalar dependencias de Python
+            git fetch origin main  # Obtener los últimos cambios del repositorio
+            git reset --hard origin/main  # Actualizar el repositorio a la última versión de la rama "main"
